@@ -11,7 +11,7 @@ const ProductCard = ({ product, addToCart, removeFromCart, getQuantity }) => {
     : originalPrice;
 
   // ← YAHAN LAGAO — JSX se pehle
-  console.log(product.name, "| discountPercent:", product.discountPercent, "| price:", product.price);
+
 
   return (
     <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group relative">

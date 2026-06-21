@@ -1,4 +1,3 @@
-// frontend/src/pages/ListMenu.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -13,7 +12,7 @@ const ListMenu = () => {
 
   const fetchList = async () => {
     try {
-      const res = await axios.get(`${backendUrl}/api/product/list`, {
+      const res = await axios.get(`${backendUrl}/api/product/admin/list`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data.success) setList(res.data.products);
@@ -37,6 +36,27 @@ const ListMenu = () => {
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.message || "Failed to delete product");
+    }
+  };
+
+  const toggleAvailability = async (id, currentStatus) => {
+    try {
+      const res = await axios.put(
+        `${backendUrl}/api/product/update/${id}`,
+        { isAvailable: !currentStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        toast.success(`Product marked as ${!currentStatus ? "Available" : "Unavailable"}`);
+        setList((prev) =>
+          prev.map((item) =>
+            item._id === id ? { ...item, isAvailable: !currentStatus } : item
+          )
+        );
+      } else toast.error(res.data.message);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update availability");
     }
   };
 
@@ -132,13 +152,47 @@ const ListMenu = () => {
           margin: 0 0 4px;
         }
         .page-sub { font-size: 13px; color: #999; margin: 0 0 1.5rem; }
+
+        .toggle-track {
+          position: relative;
+          display: inline-block;
+          width: 40px;
+          height: 22px;
+          cursor: pointer;
+          flex-shrink: 0;
+        }
+        .toggle-track input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+          position: absolute;
+          inset: 0;
+          border-radius: 22px;
+          transition: background 0.2s;
+        }
+        .toggle-thumb {
+          position: absolute;
+          top: 3px;
+          width: 16px;
+          height: 16px;
+          background: #fff;
+          border-radius: 50%;
+          transition: left 0.2s;
+          pointer-events: none;
+        }
+
+        .avail-badge {
+          display: inline-block;
+          padding: 3px 10px;
+          border-radius: 99px;
+          font-size: 11.5px;
+          font-weight: 500;
+        }
+        .avail-on  { background: #f0fdf4; color: #16a34a; }
+        .avail-off { background: #fff5f5; color: #dc2626; }
       `}</style>
 
-      {/* HEADER */}
       <p className="page-title">Menu List</p>
       <p className="page-sub">{list.length} items on the menu</p>
 
-      {/* TABLE */}
       <div style={{
         background: "#fff",
         borderRadius: "16px",
@@ -153,13 +207,14 @@ const ListMenu = () => {
               <th>Name</th>
               <th>Category</th>
               <th>Price</th>
+              <th style={{ textAlign: "center" }}>Status</th>
               <th style={{ textAlign: "center" }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {list.length === 0 ? (
               <tr>
-                <td colSpan="5">
+                <td colSpan="6">
                   <div className="empty-state">
                     <div className="empty-icon">🍽️</div>
                     <p style={{ margin: 0, fontWeight: 500, color: "#888" }}>No items found</p>
@@ -168,7 +223,7 @@ const ListMenu = () => {
                 </td>
               </tr>
             ) : list.map((item) => (
-              <tr key={item._id}>
+              <tr key={item._id} style={{ opacity: item.isAvailable === false ? 0.55 : 1 }}>
                 <td>
                   <img src={item.image} alt={item.name} className="item-img" />
                 </td>
@@ -179,6 +234,22 @@ const ListMenu = () => {
                   <span className="category-chip">{item.category}</span>
                 </td>
                 <td className="price-cell">PKR {Math.round(item.price)}</td>
+                <td>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "5px" }}>
+                    <span className={`avail-badge ${item.isAvailable === false ? "avail-off" : "avail-on"}`}>
+                      {item.isAvailable === false ? "○ Off" : "● Available"}
+                    </span>
+                    <label className="toggle-track">
+                      <input
+                        type="checkbox"
+                        checked={item.isAvailable !== false}
+                        onChange={() => toggleAvailability(item._id, item.isAvailable !== false)}
+                      />
+                      <span className="toggle-slider" style={{ background: item.isAvailable === false ? "#ccc" : "#1a1a1a" }} />
+                      <span className="toggle-thumb" style={{ left: item.isAvailable === false ? "3px" : "21px" }} />
+                    </label>
+                  </div>
+                </td>
                 <td>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
                     <button className="btn-edit" onClick={() => navigate(`/admin/update/${item._id}`)}>

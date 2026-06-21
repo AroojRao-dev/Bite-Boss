@@ -47,6 +47,7 @@ import AdminInbox from "./admin/pages/AdminInbox";
 import ChefManager from "./admin/components/ChefManager";
 import AdminSettings from "./admin/pages/AdminSettings";
 import AddTable from "./admin/pages/AddTable";
+import Customers from "./admin/pages/Customers";
 import AdminNewsletterDashboard from "./admin/pages/AdminNewsletterDashboard";
 
 import { ToastContainer } from "react-toastify";
@@ -255,27 +256,30 @@ function App() {
 
             {/* ADMIN ROUTES */}
             <Route
-              path="/admin"
-              element={
-                <AdminRoute>
-                  <DashboardLayout />
-                </AdminRoute>
-              }
-            >
-              <Route index element={<Navigate to="dashboard" replace />} />
-              <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="add" element={<AddMenu />} />
-              <Route path="list" element={<ListMenu />} />
-              <Route path="update/:id" element={<UpdateMenu />} />
-              <Route path="reviews" element={<AdminReviews />} />
-              <Route path="inbox" element={<AdminInbox />} />
-              <Route path="deliveries" element={<Deliveries />} />
-              <Route path="chefs" element={<ChefManager />} />
-              <Route path="settings" element={<AdminSettings />} />
-              <Route path="addtable" element={<AddTable />} />
-              <Route path="admintable" element={<AdminTable />} />
-              <Route path="newsletter" element={<AdminNewsletterDashboard />} />
-            </Route>
+  path="/admin"
+  element={
+    <AdminRoute>
+      <DashboardLayout />
+    </AdminRoute>
+  }
+>
+  <Route index element={<Navigate to="dashboard" replace />} />
+  <Route path="dashboard" element={<AdminDashboard />} />
+  <Route path="add" element={<AddMenu />} />
+  <Route path="list" element={<ListMenu />} />
+  <Route path="update/:id" element={<UpdateMenu />} />
+  <Route path="reviews" element={<AdminReviews />} />
+  <Route path="inbox" element={<AdminInbox />} />
+  <Route path="deliveries" element={<Deliveries />} />
+  <Route path="chefs" element={<ChefManager />} />
+  <Route path="settings" element={<AdminSettings />} />
+  <Route path="addtable" element={<AddTable />} />
+  <Route path="admintable" element={<AdminTable />} />
+  <Route path="newsletter" element={<AdminNewsletterDashboard />} />
+  <Route path="customers" element={<Customers />} />
+</Route>
+
+            
 
             {/* FALLBACK */}
             <Route path="*" element={<Navigate to="/signup" replace />} />

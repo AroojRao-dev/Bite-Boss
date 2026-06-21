@@ -3,7 +3,6 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import { backendUrl } from "../config";
 import { CartContext } from "../context/CartContext";
-import ReviewForm from "../components/ReviewForm";
 import ReviewItem from "../components/ReviewItem";
 import RatingBreakdown from "../components/RatingBreakdown";
 
@@ -53,14 +52,11 @@ const ProductDetail = () => {
     removeFromCart(product._id);
   };
 
-  // ✅ FIXED: qty > 0 ho toh sirf flash, dobara add nahi
   const handleAddToCart = () => {
     if (!product) return;
-
     if (qty === 0) {
       addToCart({ ...product, price: product.originalPrice || product.price });
     }
-
     setAdded(true);
     setShowMiniCart(true);
     setTimeout(() => {
@@ -88,17 +84,7 @@ const ProductDetail = () => {
       else setAnimatedTotal(total);
     };
     animate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [total]);
-
-  const handleAddReview = async (data) => {
-    try {
-      const res = await axios.post(`${backendUrl}/api/reviews/${id}`, data);
-      if (res.data?.review) setReviews((prev) => [res.data.review, ...prev]);
-    } catch (err) {
-      console.error(err.message);
-    }
-  };
 
   const handleLike = async (reviewId) => {
     try {
@@ -120,12 +106,27 @@ const ProductDetail = () => {
     }
   };
 
+  const handleEdit = async (reviewId, updatedReview) => {
+    try {
+      const res = await axios.put(
+        `${backendUrl}/api/reviews/${reviewId}`,
+        updatedReview
+      );
+      if (res.data?.review) {
+        setReviews((prev) =>
+          prev.map((r) => (r._id === reviewId ? res.data.review : r))
+        );
+      }
+    } catch (err) {
+      console.error(err.message);
+    }
+  };
+
   if (!product) return <div className="p-10 text-center">Loading...</div>;
 
   return (
     <div className="min-h-screen bg-[#fdf6ee] p-6">
       <div className="max-w-5xl mx-auto">
-
         {/* PRODUCT */}
         <div className="bg-white border rounded-2xl grid md:grid-cols-2 overflow-hidden mb-6">
           <div className="relative">
@@ -180,7 +181,6 @@ const ProductDetail = () => {
               </button>
             </div>
 
-            {/* ✅ ADD TO CART — hamesha visible, sirf pehli baar add karta hai */}
             <button
               onClick={handleAddToCart}
               className={`mt-3 px-4 py-2 text-white rounded-xl transition ${
@@ -233,12 +233,11 @@ const ProductDetail = () => {
               review={r}
               onLike={() => handleLike(r._id)}
               onDelete={() => handleDelete(r._id)}
+              onEdit={(updated) => handleEdit(r._id, updated)}
             />
           ))}
         </div>
-        <div className="mt-6">
-          <ReviewForm onSubmit={handleAddReview} />
-        </div>
+
       </div>
 
       {/* MINI CART */}

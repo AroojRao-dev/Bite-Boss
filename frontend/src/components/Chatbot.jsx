@@ -6,13 +6,12 @@ import { MdRestaurantMenu } from "react-icons/md";
 const EMOJIS = ["😋", "🍕", "🍔", "🥤", "🔥", "💯", "👌", "❤️"];
 
 const QUICK_CHIPS = [
-  { label: "Full Menu", msg: "menu dikhao" },
-  { label: "Pizzas 🍕", msg: "pizza menu" },
-  { label: "Burgers 🍔", msg: "burger menu" },
-  { label: "Drinks 🥤", msg: "drinks menu" },
+  { label: "Menu 1️⃣", msg: "1" },
+  { label: "Table Booking 2️⃣", msg: "2" },
+  { label: "Delivery 3️⃣", msg: "3" },
   { label: "Best Item 🔥", msg: "best item" },
+  { label: "Pizzas 🍕", msg: "pizza menu" },
 ];
-
 const Chatbot = () => {
   const [messages, setMessages] = useState([
     {

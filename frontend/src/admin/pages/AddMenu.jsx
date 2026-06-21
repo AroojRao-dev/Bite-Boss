@@ -10,10 +10,18 @@ const AddMenu = () => {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("Fast Food");
+  const [isAvailable, setIsAvailable] = useState(true);
+  const [discountPercent, setDiscountPercent] = useState("");  // ← naya
   const [loading, setLoading] = useState(false);
 
   const categories = ["Fast Food","Desi Food","Nashta","Lunch","Dinner","Cold Drinks","Coffee"];
   const token = localStorage.getItem("adminToken");
+
+  // ← discounted price calculate karo live
+  const discountedPrice =
+    price && discountPercent
+      ? Math.round(parseFloat(price) - (parseFloat(price) * parseFloat(discountPercent)) / 100)
+      : null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,6 +33,8 @@ const AddMenu = () => {
       formData.append("description", description);
       formData.append("price", parseFloat(price));
       formData.append("category", category);
+      formData.append("isAvailable", isAvailable);
+      formData.append("discountPercent", discountPercent ? parseFloat(discountPercent) : 0);  // ← naya
       if (image) formData.append("image", image);
 
       const res = await axios.post(`${backendUrl}/api/product/add`, formData, {
@@ -33,7 +43,8 @@ const AddMenu = () => {
 
       if (res.data.success) {
         toast.success("Product added successfully!");
-        setName(""); setDescription(""); setPrice(""); setCategory("Fast Food"); setImage(null);
+        setName(""); setDescription(""); setPrice(""); setCategory("Fast Food");
+        setImage(null); setIsAvailable(true); setDiscountPercent("");  // ← reset
       } else toast.error(res.data.message);
     } catch (err) {
       console.error("Add product error:", err.response?.data || err);
@@ -122,6 +133,44 @@ const AddMenu = () => {
           pointer-events: none;
         }
         .price-input { padding-left: 46px !important; font-family: 'DM Mono', monospace !important; }
+
+        .percent-suffix {
+          position: absolute;
+          right: 13px;
+          top: 50%;
+          transform: translateY(-50%);
+          font-size: 12px;
+          font-weight: 500;
+          color: #aaa;
+          font-family: 'DM Mono', monospace;
+          pointer-events: none;
+        }
+        .percent-input { padding-right: 36px !important; font-family: 'DM Mono', monospace !important; }
+
+        .toggle-track {
+          position: relative;
+          display: inline-block;
+          width: 44px;
+          height: 24px;
+          cursor: pointer;
+          flex-shrink: 0;
+        }
+        .toggle-track input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+          position: absolute;
+          inset: 0;
+          border-radius: 24px;
+          transition: background 0.2s;
+        }
+        .toggle-thumb {
+          position: absolute;
+          top: 3px;
+          width: 18px;
+          height: 18px;
+          background: #fff;
+          border-radius: 50%;
+          transition: left 0.2s;
+        }
       `}</style>
 
       <form
@@ -149,16 +198,12 @@ const AddMenu = () => {
           <label className="field-label">Item Image</label>
           <label htmlFor="image" className="upload-zone">
             {image ? (
-              <img
-                src={URL.createObjectURL(image)}
-                alt="preview"
+              <img src={URL.createObjectURL(image)} alt="preview"
                 style={{ width: "90px", height: "90px", objectFit: "cover", borderRadius: "10px", border: "1px solid #ede9e3" }}
               />
             ) : (
               <>
-                <img
-                  src={upload_image}
-                  alt="upload"
+                <img src={upload_image} alt="upload"
                   style={{ width: "52px", height: "52px", objectFit: "cover", borderRadius: "8px", opacity: 0.5 }}
                 />
                 <p style={{ margin: 0, fontSize: "12.5px", color: "#bbb", fontWeight: 500 }}>Click to upload image</p>
@@ -171,25 +216,16 @@ const AddMenu = () => {
         {/* NAME */}
         <div>
           <label className="field-label">Product Name</label>
-          <input
-            type="text"
-            className="add-input"
-            placeholder="e.g. Chicken Burger"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
+          <input type="text" className="add-input" placeholder="e.g. Chicken Burger"
+            value={name} onChange={(e) => setName(e.target.value)} required
           />
         </div>
 
         {/* DESCRIPTION */}
         <div>
           <label className="field-label">Description</label>
-          <textarea
-            className="add-textarea"
-            placeholder="Brief description of the item..."
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows="3"
+          <textarea className="add-textarea" placeholder="Brief description of the item..."
+            value={description} onChange={(e) => setDescription(e.target.value)} rows="3"
           />
         </div>
 
@@ -205,16 +241,77 @@ const AddMenu = () => {
             <label className="field-label">Price</label>
             <div className="price-wrap">
               <span className="price-prefix">PKR</span>
-              <input
-                type="number"
-                className="add-input price-input"
-                placeholder="0"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                required
+              <input type="number" className="add-input price-input" placeholder="0"
+                value={price} onChange={(e) => setPrice(e.target.value)} required
               />
             </div>
           </div>
+        </div>
+
+        {/* DISCOUNT */}
+        <div>
+          <label className="field-label">Offer / Discount <span style={{ color: "#bbb", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></label>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", alignItems: "center" }}>
+            <div className="price-wrap">
+              <input
+                type="number"
+                className="add-input percent-input"
+                placeholder="0"
+                min="0"
+                max="100"
+                value={discountPercent}
+                onChange={(e) => setDiscountPercent(e.target.value)}
+              />
+              <span className="percent-suffix">%</span>
+            </div>
+
+            {/* LIVE PREVIEW */}
+            <div style={{
+              padding: "9px 14px",
+              borderRadius: "10px",
+              background: discountedPrice ? "#fffbeb" : "#fafaf9",
+              border: `1.5px solid ${discountedPrice ? "#fde68a" : "#e2e0db"}`,
+              transition: "all 0.2s",
+            }}>
+              {discountedPrice ? (
+                <div>
+                  <p style={{ margin: 0, fontSize: "11px", color: "#92400e", fontWeight: 500 }}>After discount</p>
+                  <p style={{ margin: 0, fontSize: "14px", fontWeight: 600, color: "#92400e", fontFamily: "'DM Mono', monospace" }}>
+                    PKR {discountedPrice}
+                    <span style={{ fontSize: "11px", marginLeft: "6px", textDecoration: "line-through", color: "#bbb", fontWeight: 400 }}>
+                      {Math.round(parseFloat(price))}
+                    </span>
+                  </p>
+                </div>
+              ) : (
+                <p style={{ margin: 0, fontSize: "12px", color: "#bbb" }}>Enter % to preview</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* AVAILABILITY TOGGLE */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "12px 14px",
+          borderRadius: "10px",
+          border: `1.5px solid ${isAvailable ? "#d4edda" : "#f8d7da"}`,
+          background: isAvailable ? "#f6fff8" : "#fff5f5",
+          transition: "all 0.2s"
+        }}>
+          <div>
+            <label className="field-label" style={{ marginBottom: "3px" }}>Availability</label>
+            <p style={{ margin: 0, fontSize: "12.5px", color: isAvailable ? "#2e7d32" : "#c62828", fontWeight: 500 }}>
+              {isAvailable ? "● Available — customers can order" : "○ Unavailable — hidden from menu"}
+            </p>
+          </div>
+          <label className="toggle-track">
+            <input type="checkbox" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} />
+            <span className="toggle-slider" style={{ background: isAvailable ? "#1a1a1a" : "#ccc" }} />
+            <span className="toggle-thumb" style={{ left: isAvailable ? "22px" : "3px" }} />
+          </label>
         </div>
 
         {/* DIVIDER */}

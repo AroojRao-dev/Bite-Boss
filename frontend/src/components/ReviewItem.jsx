@@ -10,13 +10,21 @@ const ReviewItem = ({ review, onLike, onDelete, onEdit }) => {
 
   const handleSave = () => {
     if (!editComment.trim()) return;
-    onEdit({ comment: editComment, rating: editRating });
-    setEditing(false);
+
+    // Safeguard: check if onEdit exists and is a function
+    if (typeof onEdit === "function") {
+      onEdit({ comment: editComment, rating: editRating });
+      setEditing(false);
+    } else {
+      console.warn("onEdit prop is missing or not a function!");
+    }
   };
 
   const fmtDate = (d) =>
     new Date(d).toLocaleDateString("en-PK", {
-      day: "numeric", month: "short", year: "numeric",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
     });
 
   return (
@@ -40,13 +48,18 @@ const ReviewItem = ({ review, onLike, onDelete, onEdit }) => {
           <div>
             <p className="text-xs text-[#888780] uppercase tracking-wide mb-1">Rating</p>
             <div className="flex gap-1">
-              {[1, 2, 3, 4, 5].map(v => (
-                <span key={v}
+              {[1, 2, 3, 4, 5].map((v) => (
+                <span
+                  key={v}
                   onMouseEnter={() => setHovered(v)}
                   onMouseLeave={() => setHovered(0)}
                   onClick={() => setEditRating(v)}
-                  className={`text-2xl cursor-pointer transition-colors
-                    ${v <= (hovered || editRating) ? "text-[#BA7517]" : "text-[#e8d5bc]"}`}>
+                  className={`text-2xl cursor-pointer transition-colors ${
+                    v <= (hovered || editRating)
+                      ? "text-[#BA7517]"
+                      : "text-[#e8d5bc]"
+                  }`}
+                >
                   ★
                 </span>
               ))}
@@ -56,17 +69,25 @@ const ReviewItem = ({ review, onLike, onDelete, onEdit }) => {
             <p className="text-xs text-[#888780] uppercase tracking-wide mb-1">Comment</p>
             <textarea
               value={editComment}
-              onChange={e => setEditComment(e.target.value)}
+              onChange={(e) => setEditComment(e.target.value)}
               className="w-full min-h-[70px] resize-none border border-[#e8d5bc] rounded-lg p-3 text-sm bg-[#fdf6ee] text-[#2C2C2A] focus:outline-none focus:border-[#D85A30]"
             />
           </div>
           <div className="flex gap-2">
-            <button onClick={handleSave}
-              className="bg-[#D85A30] text-white text-xs px-4 py-2 rounded-lg cursor-pointer hover:bg-[#993C1D]">
+            <button
+              onClick={handleSave}
+              className="bg-[#D85A30] text-white text-xs px-4 py-2 rounded-lg cursor-pointer hover:bg-[#993C1D]"
+            >
               Save
             </button>
-            <button onClick={() => { setEditing(false); setEditComment(review.comment); setEditRating(review.rating); }}
-              className="border border-[#e8d5bc] text-[#888780] text-xs px-4 py-2 rounded-lg cursor-pointer">
+            <button
+              onClick={() => {
+                setEditing(false);
+                setEditComment(review.comment);
+                setEditRating(review.rating);
+              }}
+              className="border border-[#e8d5bc] text-[#888780] text-xs px-4 py-2 rounded-lg cursor-pointer"
+            >
               Cancel
             </button>
           </div>
@@ -77,19 +98,26 @@ const ReviewItem = ({ review, onLike, onDelete, onEdit }) => {
 
       {/* Actions */}
       <div className="flex gap-2 mt-3 flex-wrap">
-        <button onClick={onLike}
-          className={`text-xs px-3 py-1.5 rounded-full border cursor-pointer transition-colors
-            ${review.liked
+        <button
+          onClick={onLike}
+          className={`text-xs px-3 py-1.5 rounded-full border cursor-pointer transition-colors ${
+            review.liked
               ? "border-[#D85A30] text-[#D85A30] bg-[#FAECE7]"
-              : "border-[#e8d5bc] text-[#888780] hover:border-[#D85A30] hover:text-[#D85A30]"}`}>
+              : "border-[#e8d5bc] text-[#888780] hover:border-[#D85A30] hover:text-[#D85A30]"
+          }`}
+        >
           ♥ Helpful {review.likes > 0 && `(${review.likes})`}
         </button>
-        <button onClick={() => setEditing(true)}
-          className="text-xs px-3 py-1.5 rounded-full border border-[#e8d5bc] text-[#888780] cursor-pointer hover:border-[#BA7517] hover:text-[#BA7517]">
+        <button
+          onClick={() => setEditing(true)}
+          className="text-xs px-3 py-1.5 rounded-full border border-[#e8d5bc] text-[#888780] cursor-pointer hover:border-[#BA7517] hover:text-[#BA7517]"
+        >
           ✎ Edit
         </button>
-        <button onClick={onDelete}
-          className="text-xs px-3 py-1.5 rounded-full border border-[#e8d5bc] text-[#888780] cursor-pointer hover:border-[#E24B4A] hover:text-[#E24B4A]">
+        <button
+          onClick={onDelete}
+          className="text-xs px-3 py-1.5 rounded-full border border-[#e8d5bc] text-[#888780] cursor-pointer hover:border-[#E24B4A] hover:text-[#E24B4A]"
+        >
           ✕ Delete
         </button>
       </div>

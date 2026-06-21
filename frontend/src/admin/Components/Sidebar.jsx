@@ -16,8 +16,8 @@ import {
   Settings,
   Layout,
   Bell,
+  Users,
 } from "lucide-react";
-
 /* NAV */
 const NAV_GROUPS = [
   {
@@ -35,14 +35,41 @@ const NAV_GROUPS = [
     ],
   },
   {
-    label: "People",
-    items: [
-      { path: "/admin/reviews", label: "Customer Reviews", icon: Star },
-      { path: "/admin/inbox", label: "Messages Inbox", icon: Mail, badge: "messages" },
-      { path: "/admin/chefs", label: "Chefs", icon: ChefHat },
-      { path: "/admin/newsletter", label: "Newsletter", icon: Bell, badge: "subscribers" },
-    ],
-  },
+  label: "People",
+  items: [
+    {
+      path: "/admin/customers",
+      label: "Customers",
+      icon: Users,
+    },
+
+    {
+      path: "/admin/reviews",
+      label: "Customer Reviews",
+      icon: Star,
+    },
+
+    {
+      path: "/admin/inbox",
+      label: "Messages Inbox",
+      icon: Mail,
+      badge: "messages",
+    },
+
+    {
+      path: "/admin/chefs",
+      label: "Chefs",
+      icon: ChefHat,
+    },
+
+    {
+      path: "/admin/newsletter",
+      label: "Newsletter",
+      icon: Bell,
+      badge: "subscribers",
+    },
+  ],
+},
 ];
 
 /* SETTINGS */
@@ -57,6 +84,10 @@ const PAGE_TITLES = {
   "/admin/dashboard": { title: "Dashboard", sub: "Overview & quick stats" },
   "/admin/add": { title: "Add Menu", sub: "Create new dishes" },
   "/admin/list": { title: "List Menu", sub: "Manage all menu items" },
+  "/admin/customers": {
+  title: "Customers",
+  sub: "Registered Users",
+},
 
   // ✅ FIXED TITLE PATH
   "/admin/admintable": { title: "Reservations", sub: "Track bookings" },

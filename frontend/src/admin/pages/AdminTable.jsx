@@ -135,26 +135,29 @@ const AdminTable = () => {
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead style={{ background: "#fafafa" }}>
             <tr>
-              {["Customer", "Date", "Table", "Payment", "Amount", "Status", "Actions"].map((h) => (
+              {["Customer", "Date", "Table", "Guests", "Payment", "Amount", "Status", "Actions"].map((h) => (
                 <th key={h} style={thStyle}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="7" style={{ textAlign: "center", padding: "40px" }}>Loading...</td></tr>
+              <tr><td colSpan="8" style={{ textAlign: "center", padding: "40px" }}>Loading...</td></tr>
             ) : filteredData.length > 0 ? filteredData.map((r) => (
               <tr key={r._id}>
                 <td style={tdStyle}>
                   <p style={{ margin: 0, fontWeight: "600" }}>{r?.user?.name || "No Name"}</p>
                   <small style={{ color: "#666" }}>{r?.user?.email}</small>
+                  <br />
+                  <small style={{ color: "#666" }}>{r?.user?.phone}</small>
                 </td>
                 <td style={tdStyle}>
-                  <p style={{ margin: 0 }}>{r?.date || "No Date"}</p>
-                  <small style={{ color: "#666" }}>{r?.time || ""}</small>
+                  <p style={{ margin: 0 }}>{r?.table?.date || "No Date"}</p>       {/* ← fix */}
+                  <small style={{ color: "#666" }}>{r?.table?.time || ""}</small>  {/* ← fix */}
                 </td>
-                <td style={tdStyle}>Table #{r?.tableNumber || "N/A"}</td>
-                <td style={tdStyle}>{r?.paymentMethod || "COD"}</td>
+                <td style={tdStyle}>Table #{r?.table?.tableNumber || "N/A"}</td>   {/* ← fix */}
+                <td style={tdStyle}>{r?.table?.guests || 1} guests</td>            {/* ← naya */}
+                <td style={tdStyle}>{r?.paymentMethod || "cash"}</td>
                 <td style={tdStyle}>Rs. {(r?.totalAmount || 0).toLocaleString()}</td>
                 <td style={tdStyle}>
                   <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
@@ -175,7 +178,7 @@ const AdminTable = () => {
                 </td>
               </tr>
             )) : (
-              <tr><td colSpan="7" style={{ textAlign: "center", padding: "50px", color: "#999" }}>No reservations found</td></tr>
+              <tr><td colSpan="8" style={{ textAlign: "center", padding: "50px", color: "#999" }}>No reservations found</td></tr>
             )}
           </tbody>
         </table>

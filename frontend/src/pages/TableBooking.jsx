@@ -8,7 +8,6 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import axios from "axios";
 import { backendUrl } from "../config";
 
-// Table images from assets
 import table6 from "../assets/T6.jpg";
 import table7 from "../assets/table.webp";
 import table8 from "../assets/tables.webp";
@@ -85,7 +84,6 @@ const TableBooking = () => {
     e.preventDefault();
 
     const newErrors = {};
-
     if (!form.firstName.trim()) newErrors.firstName = "Required";
     if (!form.lastName.trim()) newErrors.lastName = "Required";
     if (!form.phone.trim()) newErrors.phone = "Required";
@@ -105,6 +103,11 @@ const TableBooking = () => {
 
     setLoading(true);
 
+    // ← cart total calculate karo
+    const cartTotal = cartItems && cartItems.length > 0
+      ? cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0)
+      : 0;
+
     const reservationData = {
       user: {
         name: `${form.firstName} ${form.lastName}`,
@@ -121,8 +124,8 @@ const TableBooking = () => {
         occasion: form.occasion,
         specialRequests: form.specialRequests,
       },
-      totalAmount: 0,
-      cartItems: [],
+      totalAmount: cartTotal,          // ← fix: 0 ki jagah actual total
+      cartItems: cartItems || [],      // ← fix: actual cart items
     };
 
     try {
@@ -156,12 +159,16 @@ const TableBooking = () => {
   const scrollSeats = (dir) =>
     seatsRef.current?.scrollBy({ left: dir * 130, behavior: "smooth" });
 
-  // FIXED: use availableTables.filter() instead of filteredTables.map()
   const guestCount = parseInt(form.guests);
   const filteredTables = availableTables.filter((t) => {
     if (!guestCount) return true;
     return t.seats >= guestCount - 1 && t.seats <= guestCount + 2;
   });
+
+  // cart total for display
+  const cartTotal = cartItems && cartItems.length > 0
+    ? cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0)
+    : 0;
 
   return (
     <>
@@ -179,7 +186,6 @@ const TableBooking = () => {
           .tb2-page { grid-template-columns: 1fr; }
         }
 
-        /* ===== LEFT ===== */
         .tb2-left {
           background: #1c1a17;
           display: flex;
@@ -251,7 +257,6 @@ const TableBooking = () => {
         .tb2-left-hours-item span:last-child { color: #a89070; }
         .tb2-left-hours-dot { width: 3px; height: 3px; border-radius: 50%; background: #3a3530; }
 
-        /* ===== RIGHT ===== */
         .tb2-right {
           overflow-y: auto;
           padding: 48px 44px 72px;
@@ -354,7 +359,6 @@ const TableBooking = () => {
 
         .tb2-card-img { width: 100%; height: 68px; object-fit: cover; display: block; }
         .tb2-card-body { padding: 9px 8px; }
-
         .tb2-card-n { font-family: 'Libre Baskerville', serif; font-size: 20px; font-weight: 400; color: #1c1a17; line-height: 1; margin-bottom: 3px; }
         .tb2-card.sel .tb2-card-n { color: #b08d57; }
         .tb2-card-s { font-size: 10px; color: #9a8e7e; letter-spacing: 0.1em; margin-bottom: 3px; }
@@ -364,6 +368,34 @@ const TableBooking = () => {
         .tb2-card-st.bk { color: #a06050; }
 
         .tb2-sel-info { text-align: center; font-size: 11px; color: #b08d57; margin-top: 10px; letter-spacing: 0.1em; }
+
+        .tb2-cart-summary {
+          background: #fff;
+          border: 1px solid #d9d1c4;
+          border-radius: 4px;
+          padding: 16px;
+          margin-bottom: 20px;
+        }
+        .tb2-cart-summary-title {
+          font-size: 9px; font-weight: 600; letter-spacing: 0.28em;
+          text-transform: uppercase; color: #9a8e7e; margin-bottom: 12px;
+        }
+        .tb2-cart-row {
+          display: flex; justify-content: space-between; align-items: center;
+          font-size: 12.5px; color: #1c1a17; padding: 5px 0;
+          border-bottom: 1px solid #f0ebe3;
+        }
+        .tb2-cart-row:last-child { border-bottom: none; }
+        .tb2-cart-total {
+          display: flex; justify-content: space-between; align-items: center;
+          font-size: 13px; font-weight: 600; color: #b08d57;
+          padding-top: 10px; margin-top: 4px;
+          border-top: 1px solid #d9d1c4;
+        }
+        .tb2-empty-cart {
+          font-size: 12px; color: #a89a88; text-align: center;
+          padding: 12px; background: #f5f0e8; border-radius: 3px;
+        }
 
         .tb2-btn {
           width: 100%; padding: 15px;
@@ -382,7 +414,7 @@ const TableBooking = () => {
 
       <div className="tb2-page">
 
-        {/* ===== LEFT ===== */}
+        {/* LEFT */}
         <div className="tb2-left">
           <div className="tb2-left-hero">
             <img src={table8} alt="Restaurant" className="tb2-left-hero-img" />
@@ -418,9 +450,10 @@ const TableBooking = () => {
           </div>
         </div>
 
-        {/* ===== RIGHT ===== */}
+        {/* RIGHT */}
         <div className="tb2-right">
 
+          {/* STEP 1 */}
           <motion.div className="tb2-section" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <h2 className="tb2-section-title"><span className="tb2-section-num">1</span> Your Details</h2>
             <div className="tb2-grid-2">
@@ -433,6 +466,7 @@ const TableBooking = () => {
             </div>
           </motion.div>
 
+          {/* STEP 2 */}
           <motion.div className="tb2-section" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}>
             <h2 className="tb2-section-title"><span className="tb2-section-num">2</span> Booking Preferences</h2>
             <div className="tb2-grid-2">
@@ -469,6 +503,7 @@ const TableBooking = () => {
             </F>
           </motion.div>
 
+          {/* STEP 3 */}
           <motion.div className="tb2-section" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
             <h2 className="tb2-section-title"><span className="tb2-section-num">3</span> Select Table</h2>
             {!form.date || !form.time ? (
@@ -503,6 +538,29 @@ const TableBooking = () => {
             )}
             {selectedTable && <p className="tb2-sel-info">Table {selectedTable.tableNumber} · {selectedTable.seats} Seats{selectedTable.label ? ` · ${selectedTable.label}` : ""}</p>}
             {errors.table && <p className="tb2-err" style={{ textAlign:"center", marginTop:8 }}>{errors.table}</p>}
+          </motion.div>
+
+          {/* STEP 4 — CART SUMMARY */}
+          <motion.div className="tb2-section" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}>
+            <h2 className="tb2-section-title"><span className="tb2-section-num">4</span> Order Summary</h2>
+            <div className="tb2-cart-summary">
+              {cartItems && cartItems.length > 0 ? (
+                <>
+                  {cartItems.map((item) => (
+                    <div key={item._id} className="tb2-cart-row">
+                      <span>{item.name} × {item.quantity}</span>
+                      <span>Rs. {(item.price * item.quantity).toLocaleString()}</span>
+                    </div>
+                  ))}
+                  <div className="tb2-cart-total">
+                    <span>Total</span>
+                    <span>Rs. {cartTotal.toLocaleString()}</span>
+                  </div>
+                </>
+              ) : (
+                <p className="tb2-empty-cart">No items in cart — you can add food items before booking</p>
+              )}
+            </div>
           </motion.div>
 
           <button className="tb2-btn" onClick={handleSubmit} disabled={loading || !selectedTable || selectedTable?.status === "Booked"}>

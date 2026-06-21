@@ -1,26 +1,55 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { backendUrl } from "../../config";
 import { toast } from "react-hot-toast";
 import { Trash2, PlusCircle, ImagePlus, UtensilsCrossed, MapPin, Tag, Users, Layers, Sofa, DollarSign, Star } from "lucide-react";
 
-const AddTable = () => {
-  const [form, setForm] = useState({
-    tableNumber: "",
-    seats: "",
-    label: "",
-    location: "",
-    type: "",
-    furniture: "",
-    description: "",
-    image: null,
-    price: "",
-    features: "",
-  });
+const INPUT_STYLE = {
+  width: "100%",
+  padding: "10px 13px",
+  borderRadius: "10px",
+  border: "1.5px solid #f0ece6",
+  background: "#fdfcfb",
+  fontSize: "13.5px",
+  color: "#1c1917",
+  outline: "none",
+  boxSizing: "border-box",
+  fontFamily: "inherit",
+  transition: "border-color 0.15s, box-shadow 0.15s",
+};
+const INPUT_PRICE_STYLE = { ...INPUT_STYLE, paddingLeft: "28px" };
+const INPUT_TEXTAREA_STYLE = { ...INPUT_STYLE, resize: "vertical", lineHeight: "1.55" };
 
+const EMPTY_FORM = {
+  tableNumber: "",
+  seats: "",
+  label: "",
+  location: "",
+  type: "",
+  furniture: "",
+  description: "",
+  image: null,
+  price: "",
+  features: "",   // plain string — only split on submit
+};
+
+const Field = ({ label, icon: Icon, children }) => (
+  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+    <label style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9ca3af" }}>
+      {Icon && <Icon size={11} />}
+      {label}
+    </label>
+    {children}
+  </div>
+);
+
+const AddTable = () => {
+  const [form, setForm] = useState(EMPTY_FORM);
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);   // separate preview URL
+  const fileInputRef = useRef(null);
 
   const fetchTables = async () => {
     try {
@@ -32,6 +61,21 @@ const AddTable = () => {
   };
 
   useEffect(() => { fetchTables(); }, []);
+
+  // revoke old object URL when image changes
+  useEffect(() => {
+    if (form.image) {
+      const url = URL.createObjectURL(form.image);
+      setPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setPreviewUrl(null);
+    }
+  }, [form.image]);
+
+  const handleChange = (field) => (e) => {
+    setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  };
 
   const handleAdd = async () => {
     if (!form.tableNumber || !form.seats) return toast.error("Table number aur seats zaroori hain");
@@ -46,7 +90,13 @@ const AddTable = () => {
       formData.append("furniture", form.furniture);
       formData.append("description", form.description);
       formData.append("price", form.price);
-      formData.append("features", JSON.stringify(form.features.split(",").map(f => f.trim())));
+
+      // safe split — filter empty strings
+      const featuresArr = form.features
+        ? form.features.split(",").map((f) => f.trim()).filter(Boolean)
+        : [];
+      formData.append("features", JSON.stringify(featuresArr));
+
       if (form.image) formData.append("image", form.image);
 
       const res = await axios.post(`${backendUrl}/api/tables/add`, formData, {
@@ -55,13 +105,14 @@ const AddTable = () => {
 
       if (res.data.success) {
         toast.success("Table add ho gaya!");
-        setForm({ tableNumber: "", seats: "", label: "", location: "", type: "", furniture: "", description: "", image: null, price: "", features: "" });
+        setForm(EMPTY_FORM);
+        if (fileInputRef.current) fileInputRef.current.value = "";
         fetchTables();
       } else {
         toast.error(res.data.message);
       }
     } catch (err) {
-      console.log(err);
+      console.error(err);
       toast.error("Table add nahi hua");
     } finally {
       setLoading(false);
@@ -86,30 +137,6 @@ const AddTable = () => {
     if (seats <= 4) return { bg: "#f0fdf4", color: "#15803d", dot: "#22c55e" };
     if (seats <= 6) return { bg: "#fff7ed", color: "#c2410c", dot: "#f97316" };
     return { bg: "#fdf4ff", color: "#7e22ce", dot: "#a855f7" };
-  };
-
-  const Field = ({ label, icon: Icon, children }) => (
-    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-      <label style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9ca3af" }}>
-        {Icon && <Icon size={11} />}
-        {label}
-      </label>
-      {children}
-    </div>
-  );
-
-  const inputStyle = {
-    width: "100%",
-    padding: "10px 13px",
-    borderRadius: "10px",
-    border: "1.5px solid #f0ece6",
-    background: "#fdfcfb",
-    fontSize: "13.5px",
-    color: "#1c1917",
-    outline: "none",
-    boxSizing: "border-box",
-    fontFamily: "inherit",
-    transition: "border-color 0.15s, box-shadow 0.15s",
   };
 
   return (
@@ -141,7 +168,6 @@ const AddTable = () => {
         {/* ── LEFT: ADD FORM ── */}
         <div style={{ background: "#fff", border: "1.5px solid #f0ece6", borderRadius: "20px", overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
 
-          {/* Form header */}
           <div style={{ padding: "20px 22px 18px", borderBottom: "1px solid #f5f1eb", background: "#fdfcfa" }}>
             <p style={{ margin: 0, fontSize: "15px", fontWeight: 600, color: "#1c1917" }}>Naya Table</p>
             <p style={{ margin: "2px 0 0", fontSize: "12.5px", color: "#a8a29e" }}>* zaroori fields hain</p>
@@ -149,57 +175,52 @@ const AddTable = () => {
 
           <div style={{ padding: "22px", display: "flex", flexDirection: "column", gap: "16px" }}>
 
-            {/* Table Number + Seats */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               <Field label="Table No *" icon={Tag}>
-                <input type="number" className="tbl-inp" style={inputStyle} placeholder="01" value={form.tableNumber}
-                  onChange={e => setForm({ ...form, tableNumber: e.target.value })} />
+                <input type="number" className="tbl-inp" style={INPUT_STYLE} placeholder="01"
+                  value={form.tableNumber} onChange={handleChange("tableNumber")} />
               </Field>
               <Field label="Seats *" icon={Users}>
-                <input type="number" className="tbl-inp" style={inputStyle} placeholder="4" value={form.seats}
-                  onChange={e => setForm({ ...form, seats: e.target.value })} />
+                <input type="number" className="tbl-inp" style={INPUT_STYLE} placeholder="4"
+                  value={form.seats} onChange={handleChange("seats")} />
               </Field>
             </div>
 
-            {/* Label + Location */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               <Field label="Label" icon={Tag}>
-                <input className="tbl-inp" style={inputStyle} placeholder="VIP / Window" value={form.label}
-                  onChange={e => setForm({ ...form, label: e.target.value })} />
+                <input className="tbl-inp" style={INPUT_STYLE} placeholder="VIP / Window"
+                  value={form.label} onChange={handleChange("label")} />
               </Field>
               <Field label="Location" icon={MapPin}>
-                <input className="tbl-inp" style={inputStyle} placeholder="Window Side" value={form.location}
-                  onChange={e => setForm({ ...form, location: e.target.value })} />
+                <input className="tbl-inp" style={INPUT_STYLE} placeholder="Window Side"
+                  value={form.location} onChange={handleChange("location")} />
               </Field>
             </div>
 
-            {/* Type + Furniture */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               <Field label="Type" icon={Layers}>
-                <input className="tbl-inp" style={inputStyle} placeholder="Luxury" value={form.type}
-                  onChange={e => setForm({ ...form, type: e.target.value })} />
+                <input className="tbl-inp" style={INPUT_STYLE} placeholder="Luxury"
+                  value={form.type} onChange={handleChange("type")} />
               </Field>
               <Field label="Furniture" icon={Sofa}>
-                <input className="tbl-inp" style={inputStyle} placeholder="Sofa" value={form.furniture}
-                  onChange={e => setForm({ ...form, furniture: e.target.value })} />
+                <input className="tbl-inp" style={INPUT_STYLE} placeholder="Sofa"
+                  value={form.furniture} onChange={handleChange("furniture")} />
               </Field>
             </div>
 
-            {/* Price */}
             <Field label="Price (PKR)" icon={DollarSign}>
               <div style={{ position: "relative" }}>
                 <span style={{ position: "absolute", left: "13px", top: "50%", transform: "translateY(-50%)", fontSize: "13px", color: "#a8a29e", fontWeight: 500 }}>₨</span>
-                <input type="number" className="tbl-inp" style={{ ...inputStyle, paddingLeft: "28px" }} placeholder="2,000" value={form.price}
-                  onChange={e => setForm({ ...form, price: e.target.value })} />
+                <input type="number" className="tbl-inp" style={INPUT_PRICE_STYLE} placeholder="2,000"
+                  value={form.price} onChange={handleChange("price")} />
               </div>
             </Field>
 
-            {/* Image Upload */}
             <Field label="Table Image" icon={ImagePlus}>
-              <label className="image-upload-area" style={{ border: "1.5px dashed #e7e2da", borderRadius: "14px", padding: form.image ? "0" : "22px 16px", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "8px", cursor: "pointer", background: "#fdfcfa", transition: "all 0.15s", overflow: "hidden" }}>
-                {form.image ? (
+              <label className="image-upload-area" style={{ border: "1.5px dashed #e7e2da", borderRadius: "14px", padding: previewUrl ? "0" : "22px 16px", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "8px", cursor: "pointer", background: "#fdfcfa", transition: "all 0.15s", overflow: "hidden" }}>
+                {previewUrl ? (
                   <div style={{ position: "relative", width: "100%" }}>
-                    <img src={URL.createObjectURL(form.image)} alt="preview" style={{ width: "100%", height: "160px", objectFit: "cover", borderRadius: "12px", display: "block" }} />
+                    <img src={previewUrl} alt="preview" style={{ width: "100%", height: "160px", objectFit: "cover", borderRadius: "12px", display: "block" }} />
                     <div style={{ position: "absolute", bottom: "10px", right: "10px", background: "rgba(0,0,0,0.55)", borderRadius: "8px", padding: "5px 10px", fontSize: "11px", color: "#fff", backdropFilter: "blur(4px)" }}>
                       Change karein
                     </div>
@@ -213,25 +234,29 @@ const AddTable = () => {
                     <p style={{ margin: 0, fontSize: "11px", color: "#c4bfb8" }}>PNG, JPG, WEBP</p>
                   </>
                 )}
-                <input type="file" accept="image/*" style={{ display: "none" }}
-                  onChange={e => { console.log("SELECTED FILE:", e.target.files[0]); setForm({ ...form, image: e.target.files[0] }); }} />
+                <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }}
+                  onChange={(e) => setForm((prev) => ({ ...prev, image: e.target.files[0] || null }))} />
               </label>
             </Field>
 
-            {/* Features */}
             <Field label="Features" icon={Star}>
-              <input className="tbl-inp" style={inputStyle} placeholder="AC, Romantic, Candle Light" value={form.features}
-                onChange={e => setForm({ ...form, features: e.target.value })} />
+              <input
+                className="tbl-inp"
+                style={INPUT_STYLE}
+                placeholder="AC, Romantic, Candle Light"
+                value={form.features}
+                onChange={handleChange("features")}
+              />
               <p style={{ margin: "3px 0 0", fontSize: "11px", color: "#c4bfb8" }}>Comma se alag karein</p>
             </Field>
 
-            {/* Description */}
             <Field label="Description">
-              <textarea className="tbl-inp" rows={3} style={{ ...inputStyle, resize: "vertical", lineHeight: "1.55" }} placeholder="Is table ke baare mein kuch likhein..." value={form.description}
-                onChange={e => setForm({ ...form, description: e.target.value })} />
+              <textarea className="tbl-inp" rows={3}
+                style={INPUT_TEXTAREA_STYLE}
+                placeholder="Is table ke baare mein kuch likhein..."
+                value={form.description} onChange={handleChange("description")} />
             </Field>
 
-            {/* Submit */}
             <button className="add-btn" onClick={handleAdd} disabled={loading}
               style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "13px", borderRadius: "12px", border: "none", background: "#1c1917", color: "#fff", fontSize: "14px", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, transition: "all 0.2s", marginTop: "4px", fontFamily: "inherit", letterSpacing: "0.01em" }}>
               <PlusCircle size={16} />
@@ -244,7 +269,6 @@ const AddTable = () => {
         {/* ── RIGHT: TABLES LIST ── */}
         <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
 
-          {/* List header */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
               <p style={{ margin: 0, fontSize: "16px", fontWeight: 600, color: "#1c1917" }}>Existing Tables</p>
@@ -272,7 +296,6 @@ const AddTable = () => {
                 return (
                   <div key={table._id} className="table-card" style={{ background: "#fff", border: "1.5px solid #f0ece6", borderRadius: "16px", padding: "14px 18px", display: "flex", alignItems: "center", gap: "14px", transition: "all 0.2s" }}>
 
-                    {/* Table image or number badge */}
                     {table.image ? (
                       <img src={table.image} alt={`Table ${table.tableNumber}`} style={{ width: "52px", height: "52px", objectFit: "cover", borderRadius: "11px", flexShrink: 0 }} />
                     ) : (
@@ -282,7 +305,6 @@ const AddTable = () => {
                       </div>
                     )}
 
-                    {/* Info */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "5px", flexWrap: "wrap" }}>
                         <span style={{ fontSize: "14px", fontWeight: 600, color: "#1c1917" }}>Table {table.tableNumber}</span>
@@ -299,19 +321,16 @@ const AddTable = () => {
                       </div>
 
                       <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-                        {/* Seats badge */}
                         <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 10px", borderRadius: "99px", fontSize: "11.5px", fontWeight: 600, background: sc.bg, color: sc.color }}>
                           <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: sc.dot }}></span>
                           {table.seats} seats
                         </span>
-
                         {table.location && (
                           <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", fontSize: "11.5px", color: "#a8a29e" }}>
                             <MapPin size={10} />
                             {table.location}
                           </span>
                         )}
-
                         {table.price && (
                           <span style={{ fontSize: "11.5px", color: "#78716c", fontWeight: 500 }}>
                             ₨{Number(table.price).toLocaleString()}
@@ -331,7 +350,6 @@ const AddTable = () => {
                       )}
                     </div>
 
-                    {/* Delete button */}
                     <button className="del-btn" onClick={() => handleDelete(table._id)} disabled={deletingId === table._id}
                       style={{ width: "34px", height: "34px", borderRadius: "10px", border: "1.5px solid #fecdd3", background: "#fff", color: "#be123c", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, transition: "all 0.15s", opacity: deletingId === table._id ? 0.5 : 1 }}>
                       <Trash2 size={14} />

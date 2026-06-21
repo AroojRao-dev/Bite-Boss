@@ -15,6 +15,7 @@ const categories = [
   { id: 7, title: "Coffee", slug: "coffee" },
   { id: 8, title: "Cold Drinks", slug: "cold drinks" },
   { id: 9, title: "Juices", slug: "juices" },
+  {id:10, title:"Chinese food", slug:"chinese"},
 ];
 
 const Menu = () => {

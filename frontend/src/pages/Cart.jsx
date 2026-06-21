@@ -15,7 +15,6 @@ const Cart = () => {
     setCartItems,
   } = useContext(CartContext);
 
-  // ✅ ALWAYS SAFE ARRAY
   const safeCartItems = useMemo(
     () => (Array.isArray(cartItems) ? cartItems : []),
     [cartItems]
@@ -30,49 +29,42 @@ const Cart = () => {
   });
   const [loadingReview, setLoadingReview] = useState(false);
 
+  // ================= EDIT STATE =================
+  const [editingReviewId, setEditingReviewId] = useState(null);
+  const [editInput, setEditInput] = useState({ comment: "", rating: "" });
+  const [loadingEdit, setLoadingEdit] = useState(false);
+
   // ================= TOTAL WITH DISCOUNT =================
-  // Each item stored in cart already has the discounted price applied (set in ProductCard)
-  // But we also support re-calculating here in case raw price is stored
   const { totalOriginal, totalDiscounted, totalSavings } = useMemo(() => {
     let orig = 0;
     let disc = 0;
-
     safeCartItems.forEach((item) => {
       const originalPrice = item.originalPrice || item.price || 0;
       const discount = item.discountPercent || item.offer || 0;
       const discountedPrice = discount
         ? Math.round(originalPrice - (originalPrice * discount) / 100)
         : originalPrice;
-
       orig += originalPrice * (item.quantity || 1);
       disc += discountedPrice * (item.quantity || 1);
     });
-
-    return {
-      totalOriginal: orig,
-      totalDiscounted: disc,
-      totalSavings: orig - disc,
-    };
+    return { totalOriginal: orig, totalDiscounted: disc, totalSavings: orig - disc };
   }, [safeCartItems]);
 
   // ================= FETCH REVIEWS =================
+  const fetchReviews = async (productId) => {
+    if (!productId) return;
+    try {
+      const res = await axios.get(`http://localhost:3200/api/reviews/product/${productId}`);
+      setReviews(Array.isArray(res.data) ? res.data : Array.isArray(res.data?.reviews) ? res.data.reviews : []);
+    } catch (err) {
+      console.error("Failed to fetch reviews", err);
+      setReviews([]);
+    }
+  };
+
   useEffect(() => {
     const productId = safeCartItems[0]?._id;
-    if (!productId) return;
-
-    const fetchReviews = async () => {
-      try {
-        const res = await axios.get(
-          `http://localhost:3200/api/reviews/${productId}`
-        );
-        setReviews(Array.isArray(res.data) ? res.data : []);
-      } catch (err) {
-        console.error("Failed to fetch reviews", err);
-        setReviews([]);
-      }
-    };
-
-    fetchReviews();
+    fetchReviews(productId);
   }, [safeCartItems]);
 
   // ================= INPUT HANDLER =================
@@ -80,17 +72,13 @@ const Cart = () => {
     setReviewInput((prev) => ({ ...prev, [field]: value }));
   };
 
-  // ================= SUBMIT REVIEW =================
+  // ================= SUBMIT NEW REVIEW =================
   const submitReview = async () => {
     const productId = safeCartItems[0]?._id;
     if (!productId) return;
-
-    if (!reviewInput.comment || !reviewInput.rating) {
-      return alert("Fill all fields!");
-    }
+    if (!reviewInput.comment || !reviewInput.rating) return alert("Fill all fields!");
 
     setLoadingReview(true);
-
     try {
       const res = await axios.post(
         `http://localhost:3200/api/reviews/${productId}`,
@@ -102,21 +90,88 @@ const Cart = () => {
         { headers: { "Content-Type": "application/json" } }
       );
 
-      setReviews((prev) => [res.data, ...(prev || [])]);
+      const backendReview = res.data?.review || res.data;
+      const savedReview = {
+        name: reviewInput.name || user?.name || "Anonymous",
+        comment: reviewInput.comment,
+        rating: Number(reviewInput.rating),
+        createdAt: new Date().toISOString(),
+        ...(backendReview && typeof backendReview === "object" ? backendReview : {}),
+      };
+
+      setReviews((prev) => [savedReview, ...(Array.isArray(prev) ? prev : [])]);
+      await fetchReviews(productId);
       setReviewInput({ name: user?.name || "", comment: "", rating: "" });
       setShowReviewForm(false);
     } catch (err) {
-      console.error(err);
-      alert("Failed to add review");
+      console.error("Review submit error:", err);
+      alert("Failed to add review. Please try again.");
     } finally {
       setLoadingReview(false);
+    }
+  };
+
+  // ================= START EDITING =================
+  const startEdit = (review) => {
+    setEditingReviewId(review._id);
+    setEditInput({ comment: review.comment, rating: String(review.rating) });
+  };
+
+  const cancelEdit = () => {
+    setEditingReviewId(null);
+    setEditInput({ comment: "", rating: "" });
+  };
+
+  // ================= SAVE EDITED REVIEW =================
+  const saveEdit = async (reviewId) => {
+    console.log("saveEdit called with:", reviewId, editInput);
+
+    if (!reviewId) return alert("Review ID missing!");
+    if (!editInput.comment || !editInput.rating) return alert("Fill all fields!");
+
+    setLoadingEdit(true);
+    try {
+      const res = await axios.put(
+        `http://localhost:3200/api/reviews/${reviewId}`,
+        {
+          comment: editInput.comment,
+          rating: Number(editInput.rating),
+        },
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      console.log("Edit response:", res.data);
+
+      const backendReview = res.data?.review || res.data;
+      setReviews((prev) =>
+        prev.map((r) =>
+          r._id === reviewId
+            ? {
+                ...r,
+                comment: editInput.comment,
+                rating: Number(editInput.rating),
+                ...(backendReview && typeof backendReview === "object" ? backendReview : {}),
+              }
+            : r
+        )
+      );
+
+      const productId = safeCartItems[0]?._id;
+      await fetchReviews(productId);
+
+      setEditingReviewId(null);
+      setEditInput({ comment: "", rating: "" });
+    } catch (err) {
+      console.error("Edit error:", err);
+      alert("Failed to update review. Please try again.");
+    } finally {
+      setLoadingEdit(false);
     }
   };
 
   // ================= UPDATE QUANTITY =================
   const updateQuantity = (id, newQty) => {
     if (!id || newQty < 1) return;
-
     setCartItems((prev) => {
       const safePrev = Array.isArray(prev) ? prev : [];
       return safePrev.map((item) =>
@@ -154,58 +209,37 @@ const Cart = () => {
           const qty = item.quantity || 1;
 
           return (
-            <div
-              key={item._id}
-              className="flex justify-between items-center mb-4 border-b pb-4"
-            >
+            <div key={item._id} className="flex justify-between items-center mb-4 border-b pb-4">
               <div className="flex items-center gap-4">
                 <div className="relative">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-20 h-20 object-cover rounded-lg"
-                  />
-                  {/* Discount badge on cart image */}
+                  <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded-lg" />
                   {discount > 0 && (
                     <span className="absolute -top-2 -left-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow">
                       {discount}% OFF
                     </span>
                   )}
                 </div>
-
                 <div>
                   <h3 className="font-semibold">{item.name}</h3>
-
-                  {/* Quantity input */}
                   <input
                     type="number"
                     min="1"
                     value={qty}
-                    onChange={(e) =>
-                      updateQuantity(item._id, parseInt(e.target.value) || 1)
-                    }
+                    onChange={(e) => updateQuantity(item._id, parseInt(e.target.value) || 1)}
                     className="border px-3 py-1 rounded w-20 mt-1"
                   />
                 </div>
               </div>
-
-              {/* Price column */}
               <div className="flex flex-col items-end gap-1">
                 <span className="font-bold text-orange-500 text-lg">
                   PKR {(discountedPrice * qty).toLocaleString()}
                 </span>
-
-                {/* Show original price if discounted */}
                 {discount > 0 && (
                   <span className="text-gray-400 text-xs line-through">
                     PKR {(originalPrice * qty).toLocaleString()}
                   </span>
                 )}
-
-                <button
-                  onClick={() => removeFromCart(item._id)}
-                  className="text-red-500 text-sm hover:underline"
-                >
+                <button onClick={() => removeFromCart(item._id)} className="text-red-500 text-sm hover:underline">
                   Remove
                 </button>
               </div>
@@ -213,30 +247,24 @@ const Cart = () => {
           );
         })}
 
-        {/* ===== ORDER SUMMARY ===== */}
+        {/* ORDER SUMMARY */}
         <div className="border-t pt-4 space-y-2">
-          {/* Show savings row only if there are any discounts */}
           {totalSavings > 0 && (
             <>
               <div className="flex justify-between text-gray-500 text-sm">
                 <span>Original Total:</span>
                 <span className="line-through">PKR {totalOriginal.toLocaleString()}</span>
               </div>
-
               <div className="flex justify-between text-green-600 font-semibold text-sm">
                 <span>🎉 Total Savings:</span>
                 <span>- PKR {totalSavings.toLocaleString()}</span>
               </div>
             </>
           )}
-
           <div className="flex justify-between items-center pt-2">
             <span className="font-bold text-xl">Total Payable:</span>
-            <span className="font-bold text-2xl text-orange-500">
-              PKR {totalDiscounted.toLocaleString()}
-            </span>
+            <span className="font-bold text-2xl text-orange-500">PKR {totalDiscounted.toLocaleString()}</span>
           </div>
-
           {totalSavings > 0 && (
             <div className="bg-green-50 border border-green-200 text-green-700 text-sm text-center py-2 rounded-xl mt-2 font-medium">
               You are saving PKR {totalSavings.toLocaleString()} on this order! 🥳
@@ -244,19 +272,12 @@ const Cart = () => {
           )}
         </div>
 
-        {/* ===== ACTIONS ===== */}
+        {/* ACTIONS */}
         <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mt-6">
-          <button
-            onClick={clearCart}
-            className="w-full sm:w-auto px-6 py-3 border border-orange-400 text-orange-500 font-medium rounded-xl hover:bg-orange-50"
-          >
+          <button onClick={clearCart} className="w-full sm:w-auto px-6 py-3 border border-orange-400 text-orange-500 font-medium rounded-xl hover:bg-orange-50">
             🗑️ Clear Cart
           </button>
-
-          <button
-            onClick={() => navigate("/checkout")}
-            className="w-full sm:w-auto px-6 py-3 bg-orange-500 text-white font-semibold rounded-xl hover:bg-orange-600"
-          >
+          <button onClick={() => navigate("/checkout")} className="w-full sm:w-auto px-6 py-3 bg-orange-500 text-white font-semibold rounded-xl hover:bg-orange-600">
             Proceed to Checkout →
           </button>
         </div>
@@ -275,6 +296,7 @@ const Cart = () => {
           </button>
         )}
 
+        {/* ADD REVIEW FORM */}
         {showReviewForm && safeCartItems[0] && (
           <div className="flex flex-col gap-2 bg-white p-4 rounded shadow-md mb-4">
             {!user && (
@@ -286,14 +308,12 @@ const Cart = () => {
                 className="border px-3 py-2 rounded"
               />
             )}
-
             <textarea
               placeholder="Your Comment"
               value={reviewInput.comment}
               onChange={(e) => handleReviewChange("comment", e.target.value)}
               className="border px-3 py-2 rounded"
             />
-
             <select
               value={reviewInput.rating}
               onChange={(e) => handleReviewChange("rating", e.target.value)}
@@ -301,55 +321,104 @@ const Cart = () => {
             >
               <option value="">Select Rating</option>
               {[1, 2, 3, 4, 5].map((n) => (
-                <option key={n} value={n}>
-                  {n} Star{n > 1 ? "s" : ""}
-                </option>
+                <option key={n} value={n}>{n} Star{n > 1 ? "s" : ""}</option>
               ))}
             </select>
-
             <div className="flex gap-2">
               <button
                 onClick={submitReview}
                 disabled={loadingReview}
-                className="bg-green-500 text-white px-3 py-2 rounded"
+                className="bg-green-500 text-white px-3 py-2 rounded disabled:opacity-60"
               >
-                {loadingReview ? "Adding..." : "Submit"}
+                {loadingReview ? "Saving..." : "Submit"}
               </button>
-
-              <button
-                onClick={() => setShowReviewForm(false)}
-                className="bg-gray-300 px-3 py-2 rounded"
-              >
+              <button onClick={() => setShowReviewForm(false)} className="bg-gray-300 px-3 py-2 rounded">
                 Cancel
               </button>
             </div>
           </div>
         )}
 
+        {/* REVIEWS LIST */}
         <div className="mt-4 space-y-3">
           {reviews.length > 0 ? (
             reviews.map((r, idx) => (
-              <div key={idx} className="bg-white p-4 rounded shadow">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-orange-400 flex items-center justify-center text-white font-bold">
-                    {r.name?.[0]?.toUpperCase() || "U"}
-                  </div>
+              <div key={r._id || idx} className="bg-white p-4 rounded shadow">
 
-                  <div>
-                    <p className="font-semibold">{r.name}</p>
-                    <p className="text-gray-400 text-xs">
-                      {dayjs(r.createdAt).format("DD MMM YYYY")}
-                    </p>
+                {/* ===== EDIT MODE ===== */}
+                {editingReviewId === r._id ? (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-sm text-gray-500 font-medium">Editing review by: {r.name}</p>
+                    <textarea
+                      value={editInput.comment}
+                      onChange={(e) => setEditInput((prev) => ({ ...prev, comment: e.target.value }))}
+                      className="border px-3 py-2 rounded w-full"
+                      rows={3}
+                    />
+                    <select
+                      value={editInput.rating}
+                      onChange={(e) => setEditInput((prev) => ({ ...prev, rating: e.target.value }))}
+                      className="border px-3 py-2 rounded"
+                    >
+                      <option value="">Select Rating</option>
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <option key={n} value={n}>{n} Star{n > 1 ? "s" : ""}</option>
+                      ))}
+                    </select>
+                    <div className="flex gap-2 mt-1">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          saveEdit(r._id);
+                        }}
+                        disabled={loadingEdit}
+                        style={{ pointerEvents: loadingEdit ? "none" : "auto" }}
+                        className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 text-sm font-medium cursor-pointer z-10 relative"
+                      >
+                        {loadingEdit ? "Saving..." : "💾 Save"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelEdit}
+                        className="bg-gray-300 px-4 py-2 rounded text-sm cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="ml-auto text-yellow-400">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <span key={i}>{i < r.rating ? "★" : "☆"}</span>
-                    ))}
-                  </div>
-                </div>
-
-                <p className="text-gray-600 text-sm mt-2">{r.comment}</p>
+                ) : (
+                  /* ===== VIEW MODE ===== */
+                  <>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-orange-400 flex items-center justify-center text-white font-bold">
+                        {r.name?.[0]?.toUpperCase() || "U"}
+                      </div>
+                      <div>
+                        <p className="font-semibold">{r.name}</p>
+                        <p className="text-gray-400 text-xs">{dayjs(r.createdAt).format("DD MMM YYYY")}</p>
+                      </div>
+                      <div className="ml-auto flex items-center gap-3">
+                        <span className="text-yellow-400">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <span key={i}>{i < r.rating ? "★" : "☆"}</span>
+                          ))}
+                        </span>
+                        {/* Edit button: show only for own review or admin */}
+                        {(user?.name === r.name || user?.isAdmin) && (
+                          <button
+                            onClick={() => startEdit(r)}
+                            className="text-blue-500 text-xs hover:underline ml-2"
+                          >
+                            ✏️ Edit
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-gray-600 text-sm mt-2">{r.comment}</p>
+                  </>
+                )}
               </div>
             ))
           ) : (

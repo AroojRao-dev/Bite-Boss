@@ -25,10 +25,20 @@ const useTilt = () => {
 };
 
 /* ── Category Image Card ── */
-const CategoryCard = ({ cat, side, index }) => {
+const CategoryCard = ({ cat, side, index, onCategoryClick }) => {
   const [hovered, setHovered] = useState(false);
   const { rotateX, rotateY, glowX, glowY, handleMouse, handleLeave } = useTilt();
   const slideDir = side === "left" ? -60 : 60;
+
+  const handleClick = () => {
+    // Scroll to menu section
+    const menuSection = document.getElementById("menu");
+    if (menuSection) {
+      menuSection.scrollIntoView({ behavior: "smooth" });
+    }
+    // Notify parent to set category
+    if (onCategoryClick) onCategoryClick(cat.slug);
+  };
 
   return (
     <motion.div
@@ -42,6 +52,7 @@ const CategoryCard = ({ cat, side, index }) => {
         onMouseMove={handleMouse}
         onMouseLeave={() => { handleLeave(); setHovered(false); }}
         onMouseEnter={() => setHovered(true)}
+        onClick={handleClick}
         style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
         className="relative cursor-pointer"
       >
@@ -184,11 +195,17 @@ const OpeningHours = () => {
     { day: "Thursday",  time: "9:00 AM – 11:00 PM" },
     { day: "Friday",    time: "9:00 AM – 11:00 PM" },
     { day: "Saturday",  time: "10:00 AM – 12:00 AM" },
-    { day: "Sunday",    time: "Closed" },
+    // ✅ Sunday: time add kiya, Closed hata diya
+    { day: "Sunday",    time: "10:00 AM – 10:00 PM" },
   ];
 
   const leftCats  = categories.slice(0, 5);
   const rightCats = categories.slice(3, 8);
+
+  // ✅ Category click handler — dispatches a custom event that Menu.jsx listens to
+  const handleCategoryClick = (slug) => {
+    window.dispatchEvent(new CustomEvent("selectMenuCategory", { detail: { slug } }));
+  };
 
   return (
     <section className="relative w-full overflow-hidden" style={{ minHeight: "85vh" }}>
@@ -238,7 +255,7 @@ const OpeningHours = () => {
         }
       `}</style>
 
-      {/* ── VIDEO (compact) ── */}
+      {/* ── VIDEO ── */}
       <video autoPlay loop muted playsInline
         className="absolute inset-0 w-full h-full object-cover">
         <source src={assets.restaurant} type="video/mp4" />
@@ -473,18 +490,18 @@ const OpeningHours = () => {
       </div>
 
       {/* ════ LEFT CATEGORY CARDS ════ */}
-     <div className="absolute top-[25%] hidden lg:flex flex-col gap-3 z-8" style={{ right: "calc(50% + 280px)" }}>
-  {leftCats.map((cat, i) => (
-    <CategoryCard key={cat.id} cat={cat} side="left" index={i} />
-  ))}
-</div>
+      <div className="absolute top-[25%] hidden lg:flex flex-col gap-3 z-8" style={{ right: "calc(50% + 280px)" }}>
+        {leftCats.map((cat, i) => (
+          <CategoryCard key={cat.id} cat={cat} side="left" index={i} onCategoryClick={handleCategoryClick} />
+        ))}
+      </div>
 
-{/* ════ RIGHT CATEGORY CARDS ════ */}
-<div className="absolute top-[25%] hidden lg:flex flex-col gap-3 z-8" style={{ left: "calc(50% + 280px)" }}>
-  {rightCats.map((cat, i) => (
-    <CategoryCard key={cat.id} cat={cat} side="right" index={i} />
-  ))}
-</div>
+      {/* ════ RIGHT CATEGORY CARDS ════ */}
+      <div className="absolute top-[25%] hidden lg:flex flex-col gap-3 z-8" style={{ left: "calc(50% + 280px)" }}>
+        {rightCats.map((cat, i) => (
+          <CategoryCard key={cat.id} cat={cat} side="right" index={i} onCategoryClick={handleCategoryClick} />
+        ))}
+      </div>
     </section>
   );
 };

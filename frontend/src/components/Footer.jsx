@@ -1,20 +1,37 @@
 // components/Footer.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { backendUrl } from '../config';
 
 const Footer = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
-  const [status, setStatus] = useState('idle'); // idle | loading | success | error | duplicate
+  const [status, setStatus] = useState('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
+  // Handles both direct routes and scroll-to-section on home page
+  const handleNavClick = (path, sectionId) => {
+    if (sectionId) {
+      if (location.pathname === '/') {
+        // Already on home — just scroll
+        const section = document.getElementById(sectionId);
+        if (section) section.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        // Go to home and tell HomeWrapper to scroll
+        navigate('/', { state: { scrollTo: sectionId } });
+      }
+    } else {
+      navigate(path);
+    }
+  };
+
   const quickLinks = [
-    { name: 'Home', path: '/' },
-    { name: 'Menu', path: '/menu' },
-    { name: 'Tables', path: '/tables' },
-    { name: 'Contact Us', path: '/contact-us' },
-    { name: 'About Us', path: '/about' },
+    { name: 'Home',       path: '/',       sectionId: null      },
+    { name: 'Menu',       path: '/',       sectionId: 'menu'    },
+    { name: 'Tables',     path: '/tables', sectionId: null      },
+    { name: 'Contact Us', path: '/',       sectionId: 'contact' },
+    { name: 'About Us',   path: '/',       sectionId: 'about'   },
   ];
 
   const socialLinks = [
@@ -30,18 +47,14 @@ const Footer = () => {
       setErrorMsg('Please enter a valid email address.');
       return;
     }
-
     setStatus('loading');
-
     try {
       const res = await fetch(`${backendUrl}/api/newsletter/subscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-
       const data = await res.json();
-
       if (res.status === 409) {
         setStatus('duplicate');
         setErrorMsg('This email is already subscribed!');
@@ -114,7 +127,9 @@ const Footer = () => {
           <ul style={styles.linkList}>
             {quickLinks.map(link => (
               <li key={link.name} style={{ listStyle: 'none' }}>
-                <button onClick={() => navigate(link.path)} style={styles.linkBtn}
+                <button
+                  onClick={() => handleNavClick(link.path, link.sectionId)}
+                  style={styles.linkBtn}
                   onMouseEnter={e => e.currentTarget.style.color = '#F5EDD8'}
                   onMouseLeave={e => e.currentTarget.style.color = '#C4A97A'}
                 >
@@ -131,8 +146,8 @@ const Footer = () => {
               { days: 'Sat – Sun', time: '10:00 AM – 12:00 AM' },
             ].map(({ days, time }) => (
               <div key={days} style={styles.hoursRow}>
-                <span style={{ color: '#C4A97A' }}>{days}</span>
-                <span style={{ color: '#F5EDD8' }}>{time}</span>
+                <span style={styles.hoursDay}>{days}</span>
+                <span style={styles.hoursTime}>{time}</span>
               </div>
             ))}
           </div>
@@ -176,7 +191,6 @@ const Footer = () => {
                   {status === 'loading' ? '...' : 'Subscribe ↗'}
                 </button>
               </div>
-
               {(status === 'error' || status === 'duplicate') && (
                 <p style={{ color: '#E24B4A', fontSize: '12px', marginTop: '6px' }}>
                   {errorMsg}
@@ -226,7 +240,9 @@ const styles = {
   linkList: { padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '2px' },
   linkBtn: { background: 'none', border: 'none', color: '#C4A97A', fontSize: '14px', fontFamily: "'DM Sans', sans-serif", cursor: 'pointer', padding: '6px 0', display: 'flex', alignItems: 'center', gap: '8px', transition: 'color 0.2s' },
   hours: { display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(245,200,100,0.1)' },
-  hoursRow: { display: 'flex', justifyContent: 'space-between', fontSize: '12.5px' },
+  hoursRow: { display: 'flex', alignItems: 'center', fontSize: '12.5px' },
+  hoursDay: { color: '#C4A97A', width: '80px', flexShrink: 0 },
+  hoursTime: { color: '#F5EDD8' },
   newsletterDesc: { fontSize: '13.5px', color: '#C4A97A', lineHeight: '1.6', marginBottom: '16px', marginTop: 0 },
   inputGroup: { display: 'flex', border: '1px solid rgba(242,168,62,0.3)', borderRadius: '10px', overflow: 'hidden', background: 'rgba(255,255,255,0.04)', transition: 'border-color 0.2s' },
   emailInput: { flex: 1, background: 'none', border: 'none', outline: 'none', padding: '11px 14px', color: '#F5EDD8', fontSize: '13.5px', fontFamily: "'DM Sans', sans-serif" },
