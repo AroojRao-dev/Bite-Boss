@@ -44,7 +44,7 @@ import AdminTable from "./admin/pages/AdminTable";
 import AdminReviews from "./admin/pages/AdminReviews";
 import Deliveries from "./admin/pages/Deliveries";
 import AdminInbox from "./admin/pages/AdminInbox";
-import ChefManager from "./admin/components/ChefManager";
+import ChefManager from "./admin/components/ChefManager.jsx";
 import AdminSettings from "./admin/pages/AdminSettings";
 import AddTable from "./admin/pages/AddTable";
 import Customers from "./admin/pages/Customers";
