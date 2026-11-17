@@ -12,10 +12,7 @@ export const addTable = async (req, res) => {
 
   try {
 
-    console.log("BODY:", req.body);
-
-    console.log("FILE:", req.file);
-
+  
     const body = req.body || {};
 
     const {
@@ -86,11 +83,7 @@ export const addTable = async (req, res) => {
         uploadedImage.secure_url;
     }
 
-    console.log(
-      "IMAGE URL:",
-      image
-    );
-
+  
     /* =====================================================
        CREATE TABLE
     ===================================================== */

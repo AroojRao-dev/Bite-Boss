@@ -1,7 +1,5 @@
 import express from "express";
-
-import upload from "../middleware/multer.js";
-
+import { safeUpload } from "../middleware/multer.js";
 import {
   addTable,
   getAllTables,
@@ -14,22 +12,15 @@ import {
 
 const router = express.Router();
 
-router.post(
-  "/add",
-  upload.single("image"),
-  addTable
-);
+// safeUpload — multer error ko catch karke JSON response deta hai
+// upload.single ki jagah yeh use karo taake server crash na ho
+router.post("/add", safeUpload("image"), addTable);
 
 router.get("/all", getAllTables);
-
 router.put("/update/:id", updateTable);
-
 router.delete("/delete/:id", deleteTable);
-
 router.get("/status", getTablesWithStatus);
-
 router.get("/bookings", getTableBookings);
-
 router.get("/:tableNumber", getSingleTableDetails);
 
 export default router;

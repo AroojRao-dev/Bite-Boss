@@ -15,7 +15,8 @@ const productSchema = new mongoose.Schema(
     price: { type: Number, required: true },
     category: { type: String, required: true },
     image: { type: String },
-    available: { type: Boolean, default: true }, // ✅ new field for availability
+    discountPercent: { type: Number, default: 0 },
+    isAvailable: { type: Boolean, default: true },
     reviews: [reviewSchema],
   },
   { timestamps: true }

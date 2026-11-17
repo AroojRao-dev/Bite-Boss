@@ -122,7 +122,6 @@ app.get("/", (req, res) => {
 const startServer = async () => {
   try {
     await connectDB();
-    console.log("MongoDB Connected ✅");
 
     cloudinaryConfig();
     console.log("Cloudinary Connected ✅");
@@ -130,8 +129,9 @@ const startServer = async () => {
     app.listen(port, () => {
       console.log(`Server running on port ${port} 🚀`);
     });
+
   } catch (err) {
-    console.log("Server failed ❌:", err.message);
+    console.error("Server failed ❌:", err.message);
     process.exit(1);
   }
 };

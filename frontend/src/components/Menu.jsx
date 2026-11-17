@@ -18,6 +18,7 @@ const categories = [
   {id:10, title:"Chinese food", slug:"chinese"},
 ];
 
+
 const Menu = () => {
   const { addToCart, removeFromCart, getQuantity } = useContext(CartContext);
   const { searchQuery } = useContext(SearchContext);

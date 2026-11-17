@@ -1,20 +1,25 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-import Admin from "./models/Admin.js";
 import dotenv from "dotenv";
-
 dotenv.config();
-mongoose.connect(process.env.MONGO_URI);
 
-const createAdmin = async () => {
-  const hashedPassword = await bcrypt.hash("123456", 10);
-  const admin = await Admin.create({
-    name: "Super Admin",
-    email: "admin@example.com",
-    password: hashedPassword,
-  });
-  console.log("Admin created:", admin);
-  mongoose.disconnect();
-};
+await mongoose.connect(process.env.MONGODB_URI);
 
-createAdmin();
+const db = mongoose.connection.db;
+const users = db.collection("users");
+
+const adminPassword = process.env.ADMIN_PASSWORD;
+
+if (!adminPassword) {
+  throw new Error("ADMIN_PASSWORD is missing");
+}
+
+const hashed = await bcrypt.hash(adminPassword, 10);
+
+await users.updateOne(
+  { email: "admin@biteboss.com" },
+  { $set: { password: hashed } }
+);
+
+console.log("✅ Admin password updated!");
+await mongoose.disconnect();

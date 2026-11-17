@@ -1,13 +1,12 @@
-// controllers/productController.js
 import Product from "../models/Product.js";
 import mongoose from "mongoose";
 import { cloudinary } from "../config/cloudinary.js";
 import fs from "fs";
 
-// List all products
+// List products — USER ke liye (sirf isAvailable: true)
 export const listProducts = async (req, res) => {
   try {
-    const products = await Product.find();
+    const products = await Product.find({ isAvailable: { $ne: false } });
     res.json({ success: true, products });
   } catch (err) {
     console.error("List products error:", err);
@@ -15,10 +14,26 @@ export const listProducts = async (req, res) => {
   }
 };
 
+// List ALL products — ADMIN ke liye (available + unavailable dono)
+export const listAllProducts = async (req, res) => {
+  try {
+    const products = await Product.find();
+    res.json({ success: true, products });
+  } catch (err) {
+    console.error("List all products error:", err);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
 // Add Product
 export const addProduct = async (req, res) => {
   try {
-    const { name, description, price, category, discountPercent } = req.body;
+    const { name, description, price, category, discountPercent, isAvailable } = req.body;
+
+    console.log("=== ADD PRODUCT DEBUG ===");
+    console.log("discountPercent:", discountPercent, "| type:", typeof discountPercent);
+    console.log("isAvailable:", isAvailable, "| type:", typeof isAvailable);
+    console.log("========================");
 
     if (!name || !price || !category)
       return res.status(400).json({ success: false, message: "Name, price and category required" });
@@ -36,8 +51,11 @@ export const addProduct = async (req, res) => {
       price,
       category,
       image: imageUrl,
-      discountPercent: discountPercent !== undefined ? Number(discountPercent) : 0,
+      discountPercent: (discountPercent !== undefined && discountPercent !== "" && discountPercent !== null) ? Number(discountPercent) : 0,
+      isAvailable: isAvailable === "false" ? false : true,
     });
+
+    console.log("SAVED discountPercent:", product.discountPercent);
 
     res.json({ success: true, message: "Product added successfully", product });
   } catch (err) {
@@ -50,10 +68,7 @@ export const addProduct = async (req, res) => {
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, price, category, discountPercent } = req.body;
-
-    console.log("REQ BODY:", req.body);
-    console.log("discountPercent received:", discountPercent);
+    const { name, description, price, category, discountPercent, isAvailable } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id))
       return res.status(400).json({ success: false, message: "Invalid product ID" });
@@ -63,9 +78,8 @@ export const updateProduct = async (req, res) => {
     if (description !== undefined) updateData.description = description;
     if (price) updateData.price = Number(price);
     if (category) updateData.category = category;
-    updateData.discountPercent = discountPercent !== undefined ? Number(discountPercent) : 0;
-
-    console.log("updateData being saved:", updateData);
+    updateData.discountPercent = (discountPercent !== undefined && discountPercent !== "" && discountPercent !== null) ? Number(discountPercent) : 0;
+    if (isAvailable !== undefined) updateData.isAvailable = isAvailable === "false" ? false : true;
 
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, { folder: "menu" });
@@ -78,8 +92,6 @@ export const updateProduct = async (req, res) => {
       { $set: updateData },
       { new: true, runValidators: false, strict: false }
     );
-
-    console.log("Updated product discountPercent:", product?.discountPercent);
 
     if (!product)
       return res.status(404).json({ success: false, message: "Product not found" });

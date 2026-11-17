@@ -6,14 +6,18 @@ dotenv.config();
 
 const seedAdmin = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+    await mongoose.connect(process.env.MONGODB_URI);
 
     const existing = await User.findOne({
       email: "admin@biteboss.com",
     });
 
     if (existing) {
-      console.log("Admin already exists!");
+      existing.password = "Admin@123";
+      existing.role = "admin";
+      await existing.save();
+
+      console.log("✅ Admin password updated: admin@biteboss.com / Admin@123");
     } else {
       await User.create({
         name: "Admin",

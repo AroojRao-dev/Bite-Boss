@@ -2,6 +2,7 @@ import express from "express";
 import {
   addProduct,
   listProducts,
+  listAllProducts,      // ← yeh add kiya
   getProduct,
   addProductReview,
   getProductReviews,
@@ -18,13 +19,12 @@ const router = express.Router();
 // Add Product (Admin + Image Upload)
 router.post("/add", authMiddleware, adminAuth, upload.single("image"), addProduct);
 
-// ✅ Update Product — multer optional, handles both JSON and multipart
+// Update Product — multer optional, handles both JSON and multipart
 router.put(
   "/update/:id",
   authMiddleware,
   adminAuth,
   (req, res, next) => {
-    // Agar multipart/form-data ho toh multer use karo, warna skip
     const contentType = req.headers["content-type"] || "";
     if (contentType.includes("multipart/form-data")) {
       upload.single("image")(req, res, next);
@@ -35,8 +35,11 @@ router.put(
   updateProduct
 );
 
-// Get All Products / Menu
+// Get All Products — USER ke liye (sirf available)
 router.get("/list", listProducts);
+
+// Get All Products — ADMIN ke liye (sab, available + unavailable)
+router.get("/admin/list", authMiddleware, adminAuth, listAllProducts);  // ← yeh add kiya
 
 // Get Single Product
 router.get("/:id", getProduct);
