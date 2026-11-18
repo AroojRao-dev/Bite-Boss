@@ -54,13 +54,17 @@ export const signup = async (req, res) => {
 // LOGIN — user aur admin dono
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+   const { email, password } = req.body;
+
+const normalizedEmail = email.trim().toLowerCase();
 
     if (!email || !password) {
       return res.status(400).json({ message: "Email and password required" });
     }
 
-    const user = await User.findOne({ email });
+   const user = await User.findOne({
+  email: normalizedEmail,
+});
 
     if (!user) {
       return res.status(401).json({ message: "Invalid email or password" });

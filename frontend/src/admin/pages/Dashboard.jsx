@@ -76,29 +76,20 @@ const DashboardLayout = () => {
 
   // ================= LOGOUT =================
 
-  const handleLogout = () => {
-    localStorage.removeItem(
-      "userToken"
-    );
+const handleLogout = () => {
+  localStorage.removeItem("adminToken");
+  localStorage.removeItem("adminInfo");
 
-    localStorage.removeItem(
-      "userInfo"
-    );
+  window.dispatchEvent(new Event("authChange"));
 
-    window.dispatchEvent(
-      new Event("authChange")
-    );
-
-    navigate("/signup");
-  };
+  navigate("/signup", { replace: true });
+};
 
   // ================= USER =================
 
-  const rawUser = JSON.parse(
-    localStorage.getItem("userInfo") ||
-      "{}"
-  );
-
+const rawUser = JSON.parse(
+  localStorage.getItem("adminInfo") || "{}"
+);
   const adminUser = {
     name:
       rawUser.name ||

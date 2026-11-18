@@ -6,6 +6,7 @@ import path from "path";
 
 import connectDB from "./config/mongodb.js";
 import cloudinaryConfig from "./config/cloudinary.js";
+import createAdmin from "./config/createAdmin.js";
 
 dotenv.config();
 
@@ -122,6 +123,7 @@ app.get("/", (req, res) => {
 const startServer = async () => {
   try {
     await connectDB();
+    await createAdmin();
 
     cloudinaryConfig();
     console.log("Cloudinary Connected ✅");
