@@ -1,14 +1,17 @@
-// routes/newsletterRoute.js
+
 import express from "express";
 import mongoose from "mongoose";
-import nodemailer from "nodemailer";
 
 import Notification from "../models/Notification.js";
 import User from "../models/User.js";
+import { transporter } from "../config/mailer.js";
 
 const router = express.Router();
 
-/* SUBSCRIBER SCHEMA */
+/* =========================
+   SUBSCRIBER SCHEMA
+========================= */
+
 const subscriberSchema = new mongoose.Schema({
   email: {
     type: String,
@@ -18,42 +21,55 @@ const subscriberSchema = new mongoose.Schema({
     trim: true,
     match: [/^\S+@\S+\.\S+$/, "Invalid email format"],
   },
+
   subscribedAt: {
     type: Date,
     default: Date.now,
   },
+
   isActive: {
     type: Boolean,
     default: true,
   },
 });
 
-const Subscriber = mongoose.model("Subscriber", subscriberSchema);
+const Subscriber =
+  mongoose.models.Subscriber ||
+  mongoose.model("Subscriber", subscriberSchema);
 
-/* EMAIL SETUP */
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL,
-    pass: process.env.PASS,
-  },
-});
+
+/* =========================
+   EMAIL HTML
+========================= */
 
 const buildEmailHTML = (message) => `
 <!DOCTYPE html>
 <html>
 <body style="font-family: Arial; background:#F8F4EE; padding:20px;">
+
   <div style="max-width:600px; margin:auto; background:white; padding:30px; border-radius:12px;">
+
     <h1 style="color:#F2A83E;">🍔 Bite Boss</h1>
-    <p style="font-size:15px; line-height:1.8;">${message}</p>
+
+    <p style="font-size:15px; line-height:1.8;">
+      ${message}
+    </p>
+
     <hr />
+
     <p>Thank you for choosing Bite Boss.</p>
+
   </div>
+
 </body>
 </html>
 `;
 
-/* SUBSCRIBE */
+
+/* =========================
+   SUBSCRIBE
+========================= */
+
 router.post("/subscribe", async (req, res) => {
   try {
     const { email } = req.body;
@@ -65,7 +81,9 @@ router.post("/subscribe", async (req, res) => {
       });
     }
 
-    const existing = await Subscriber.findOne({ email });
+    const existing = await Subscriber.findOne({
+      email: email.trim().toLowerCase(),
+    });
 
     if (existing) {
       return res.status(409).json({
@@ -74,14 +92,18 @@ router.post("/subscribe", async (req, res) => {
       });
     }
 
-    await Subscriber.create({ email });
+    await Subscriber.create({
+      email: email.trim().toLowerCase(),
+    });
 
     res.status(201).json({
       success: true,
       message: "Subscribed successfully!",
     });
+
   } catch (error) {
     console.error("Subscribe error:", error);
+
     res.status(500).json({
       success: false,
       message: "Server error.",
@@ -89,7 +111,11 @@ router.post("/subscribe", async (req, res) => {
   }
 });
 
-/* GET SUBSCRIBERS */
+
+/* =========================
+   GET SUBSCRIBERS
+========================= */
+
 router.get("/subscribers", async (req, res) => {
   try {
     const subscribers = await Subscriber.find().sort({
@@ -98,8 +124,9 @@ router.get("/subscribers", async (req, res) => {
 
     const total = subscribers.length;
 
+    const now = new Date();
+
     const thisMonth = subscribers.filter((s) => {
-      const now = new Date();
       const subDate = new Date(s.subscribedAt);
 
       return (
@@ -114,8 +141,10 @@ router.get("/subscribers", async (req, res) => {
       thisMonth,
       subscribers,
     });
+
   } catch (error) {
     console.error("Fetch subscribers error:", error);
+
     res.status(500).json({
       success: false,
       message: "Server error.",
@@ -123,7 +152,11 @@ router.get("/subscribers", async (req, res) => {
   }
 });
 
-/* DELETE SUBSCRIBER */
+
+/* =========================
+   DELETE SUBSCRIBER
+========================= */
+
 router.delete("/subscribers/:id", async (req, res) => {
   try {
     await Subscriber.findByIdAndDelete(req.params.id);
@@ -132,7 +165,10 @@ router.delete("/subscribers/:id", async (req, res) => {
       success: true,
       message: "Subscriber removed.",
     });
+
   } catch (error) {
+    console.error("Delete subscriber error:", error);
+
     res.status(500).json({
       success: false,
       message: "Server error.",
@@ -140,7 +176,11 @@ router.delete("/subscribers/:id", async (req, res) => {
   }
 });
 
-/* SEND NEWSLETTER + CREATE OFFER NOTIFICATION */
+
+/* =========================
+   SEND NEWSLETTER
+========================= */
+
 router.post("/send", async (req, res) => {
   try {
     const { subject, message } = req.body;
@@ -169,20 +209,28 @@ router.post("/send", async (req, res) => {
     for (const sub of subscribers) {
       try {
         await transporter.sendMail({
-          from: `"Bite Boss 🍔" <${process.env.EMAIL}>`,
           to: sub.email,
           subject,
           html: buildEmailHTML(message),
         });
 
         sent++;
+
       } catch (mailErr) {
-        console.error(`Email fail: ${sub.email}`, mailErr.message);
+        console.error(
+          `Email fail: ${sub.email}`,
+          mailErr.message
+        );
+
         failed++;
       }
     }
 
-    // ✅ Offer notification saare users ko show hogi
+
+    /* =========================
+       CREATE OFFER NOTIFICATIONS
+    ========================= */
+
     const users = await User.find({
       role: "user",
     });
@@ -202,11 +250,12 @@ router.post("/send", async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Emails aur offer notifications bhej di gayi!",
+      message: "Newsletter processing completed!",
       sent,
       failed,
       notificationsCreated: notifications.length,
     });
+
   } catch (error) {
     console.error("Send newsletter error:", error);
 
@@ -216,5 +265,6 @@ router.post("/send", async (req, res) => {
     });
   }
 });
+
 
 export { router, Subscriber };
