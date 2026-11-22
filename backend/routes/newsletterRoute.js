@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 
 import Notification from "../models/Notification.js";
 import User from "../models/User.js";
-import { transporter } from "../config/mailer.js";
+import { transporter } from "../utils/mailer.js";
 
 const router = express.Router();
 

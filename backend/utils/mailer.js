@@ -16,6 +16,7 @@ export const transporter = {
       from:
         process.env.RESEND_FROM ||
         "Bite Boss <onboarding@resend.dev>",
+
       to: mailOptions.to,
       subject: mailOptions.subject,
       html: mailOptions.html,
