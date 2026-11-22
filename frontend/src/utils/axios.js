@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const instance = axios.create({
-  baseURL: "http://localhost:3200/api", // full backend URL
+  baseURL: "https://bite-boss-production.up.railway.app/api",
 });
 
 // Auto add token if logged in

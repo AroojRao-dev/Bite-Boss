@@ -39,7 +39,16 @@ const port = process.env.PORT || 3200;
 /* =========================
    MIDDLEWARE
 ========================= */
-app.use(cors());
+app.use(cors({
+  origin: [
+    "https://biteboss.netlify.app"
+  ],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
