@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
-const BASE_URL = "http://localhost:3200";
+const BASE_URL = "https://bite-boss-production.up.railway.app";
 const API = `${BASE_URL}/api/chefs`;
 
 const getToken = () => localStorage.getItem("adminToken");

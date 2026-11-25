@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { FaBell } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
-const API = import.meta.env.VITE_BACKEND_URL || "http://localhost:3200";
+const API = import.meta.env.VITE_BACKEND_URL || "https://bite-boss-production.up.railway.app";
 
 const authHeader = () => ({
   Authorization: `Bearer ${localStorage.getItem("userToken")}`,

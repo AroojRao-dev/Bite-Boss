@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { backendUrl } from "../../config";
+
 import axios from "axios";
 import { toast } from "react-toastify";
 import upload_image from "../assets/upload1.jpeg";
@@ -6,6 +8,7 @@ import { backendUrl } from "../../config";
 
 const AddMenu = () => {
   const [image, setImage] = useState(null);
+  
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
@@ -13,6 +16,7 @@ const AddMenu = () => {
   const [isAvailable, setIsAvailable] = useState(true);
   const [discountPercent, setDiscountPercent] = useState("");  // ← naya
   const [loading, setLoading] = useState(false);
+  
 
   const categories = ["Fast Food","Desi Food","Nashta","Lunch","Dinner","Cold Drinks","Coffee"];
   const token = localStorage.getItem("adminToken");

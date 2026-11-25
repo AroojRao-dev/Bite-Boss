@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 
-const backendUrl = "http://localhost:3200";
+const backendUrl = "https://bite-boss-production.up.railway.app";
 
 const AdminInbox = () => {
   const [messages, setMessages] = useState([]);

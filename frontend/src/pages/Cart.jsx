@@ -54,7 +54,9 @@ const Cart = () => {
   const fetchReviews = async (productId) => {
     if (!productId) return;
     try {
-      const res = await axios.get(`http://localhost:3200/api/reviews/product/${productId}`);
+const res = await axios.get(
+  `https://bite-boss-production.up.railway.app/api/reviews/product/${productId}`
+);
       setReviews(Array.isArray(res.data) ? res.data : Array.isArray(res.data?.reviews) ? res.data.reviews : []);
     } catch (err) {
       console.error("Failed to fetch reviews", err);
@@ -80,15 +82,15 @@ const Cart = () => {
 
     setLoadingReview(true);
     try {
-      const res = await axios.post(
-        `http://localhost:3200/api/reviews/${productId}`,
-        {
-          name: reviewInput.name || user?.name || "Anonymous",
-          comment: reviewInput.comment,
-          rating: Number(reviewInput.rating),
-        },
-        { headers: { "Content-Type": "application/json" } }
-      );
+     const res = await axios.post(
+  `https://bite-boss-production.up.railway.app/api/reviews/${productId}`,
+  {
+    name: reviewInput.name || user?.name || "Anonymous",
+    comment: reviewInput.comment,
+    rating: Number(reviewInput.rating),
+  },
+  { headers: { "Content-Type": "application/json" } }
+);
 
       const backendReview = res.data?.review || res.data;
       const savedReview = {
@@ -131,15 +133,14 @@ const Cart = () => {
 
     setLoadingEdit(true);
     try {
-      const res = await axios.put(
-        `http://localhost:3200/api/reviews/${reviewId}`,
-        {
-          comment: editInput.comment,
-          rating: Number(editInput.rating),
-        },
-        { headers: { "Content-Type": "application/json" } }
-      );
-
+    const res = await axios.put(
+  `https://bite-boss-production.up.railway.app/api/reviews/${reviewId}`,
+  {
+    comment: editInput.comment,
+    rating: Number(editInput.rating),
+  },
+  { headers: { "Content-Type": "application/json" } }
+);
       console.log("Edit response:", res.data);
 
       const backendReview = res.data?.review || res.data;

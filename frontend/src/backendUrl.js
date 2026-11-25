@@ -1,2 +1,2 @@
-// src/backendUrl.js
-export const backendUrl = "http://localhost:3200"; // apna backend url
+// src/config.js
+export const backendUrl = "https://bite-boss-production.up.railway.app";

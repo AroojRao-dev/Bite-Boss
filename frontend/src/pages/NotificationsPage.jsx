@@ -6,8 +6,9 @@ import {
   FaCreditCard, FaStar, FaGift, FaMotorcycle, FaTrash,
   FaCheck, FaSpinner, FaExclamationCircle,
 } from "react-icons/fa";
-
-const API = import.meta.env.VITE_BACKEND_URL || "http://localhost:3200";
+const API =
+  import.meta.env.VITE_BACKEND_URL ||
+  "https://bite-boss-production.up.railway.app";
 
 const iconMap = {
   bag:   { Icon: FaShoppingBag, bg: "from-orange-400 to-orange-600",  shadow: "rgba(234,88,12,0.35)"  },

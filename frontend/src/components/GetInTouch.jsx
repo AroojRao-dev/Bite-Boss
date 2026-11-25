@@ -22,7 +22,7 @@ const GetInTouch = () => {
     const { name, email, phone, message } = values;
 
     try {
-      const res = await fetch("http://localhost:3200/api/contact", {
+      const res = await fetch("https://bite-boss-production.up.railway.app/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, phone, message }),

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 
-const backendUrl = "http://localhost:3200";
+const backendUrl = "https://bite-boss-production.up.railway.app";
 
 const DelayedAuthModal = ({ isOpen, onClose, initialIsForgot = false }) => {
   const [showPassword, setShowPassword] = useState(false);

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { FaFacebookF, FaInstagram, FaTwitter, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { motion, useScroll, useTransform } from "framer-motion";
-
+import { backendUrl } from "../config";
 const ChefSection = () => {
   const [chefs, setChefs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -11,7 +11,7 @@ const ChefSection = () => {
   useEffect(() => {
     const fetchChefs = async () => {
       try {
-        const res = await fetch("http://localhost:3200/api/chefs");
+        const res = await fetch(`${backendUrl}/api/chefs`);
         const data = await res.json();
         setChefs(data);
       } catch (err) {
